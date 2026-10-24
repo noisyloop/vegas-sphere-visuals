@@ -5,6 +5,17 @@ It's a generic, stylized venue and doesn't use any real venue's name, logo or br
 
 Built with Vite, vanilla JS and Three.js. No framework, and the gzipped bundle is about 175 KB.
 
+![Exterior view with the built-in fractal](docs/screenshots/exterior-demo.jpg)
+
+| | |
+| --- | --- |
+| ![Video file on the sphere](docs/screenshots/exterior-video.jpg) | ![Interior view, equirectangular](docs/screenshots/interior-equirect.jpg) |
+| Your video file on the sphere | Interior view, equirect |
+| ![Interior view, dome master](docs/screenshots/interior-dome-master.jpg) | ![Control panel](docs/screenshots/ui-panel.jpg) |
+| Interior view, dome master | Control panel |
+| ![Cat mode](docs/screenshots/cat-mode.jpg) | ![Cat mode green screen](docs/screenshots/cat-green-screen.jpg) |
+| Cat mode | Cat mode, green screen |
+
 ## Run
 
 ```bash
@@ -42,9 +53,9 @@ Screen capture needs a desktop browser; it's disabled on phones that don't suppo
 Put either file in `public/assets/`:
 
 - `cat.glb`: a 3D model. It's used first if it exists.
-- `cat.png`: an image, shown on a spinning card.
+- `cat.png`: an image, shown on a spinning card. If the image has a green-screen background, the green is keyed out automatically.
 
-If neither file exists, the app builds its own original cartoon cat head out of Three.js primitives. No audio is bundled.
+If neither file exists, the app builds its own grey tabby out of Three.js primitives. Only add files you have the rights to use. No audio is bundled.
 
 ## Project layout
 

@@ -7,7 +7,7 @@ import { loadCatModel } from './catModel.js';
 // the canvas on pure chroma green so a recording can be keyed out.
 
 export const CHROMA_GREEN = new THREE.Color(0x00ff00);
-const NIGHT = new THREE.Color(0x120626);
+const NIGHT = new THREE.Color(0x3a1670);
 
 export class CatMode {
   constructor(renderer, mainScene, { position }) {
@@ -27,7 +27,7 @@ export class CatMode {
     const key = new THREE.DirectionalLight(0xffffff, 1.6);
     key.position.set(2, 3, 5);
     this.scene.add(key);
-    this.camera = new THREE.PerspectiveCamera(30, 2, 0.1, 50);
+    this.camera = new THREE.PerspectiveCamera(20, 2, 0.1, 50);
     this.camera.position.set(0, 0, 9);
 
     this.pivot = new THREE.Group(); // spinning pivot inside the offscreen scene
@@ -76,7 +76,7 @@ export class CatMode {
     const aspect = mapping === 0 ? 2 : 1;
     if (this.camera.aspect !== aspect) {
       this.camera.aspect = aspect;
-      this.camera.fov = mapping === 0 ? 30 : 34;
+      this.camera.fov = mapping === 0 ? 20 : 30;
       this.camera.updateProjectionMatrix();
     }
   }

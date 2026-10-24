@@ -13,13 +13,13 @@ export function createLedSphere({ radius, center }) {
     uHasContent: { value: 0 },
     uMapping: { value: 0 },
     uRotation: { value: 0 },
-    uBrightness: { value: 1.2 },
+    uBrightness: { value: 1.3 },
   };
 
   const uniforms = {
     ...sharedUniforms,
-    uRows: { value: 160 },
-    uDotSize: { value: 0.75 },
+    uRows: { value: 200 },
+    uDotSize: { value: 0.85 },
     uInterior: { value: 0 },
     uLod: { value: 0 },
   };

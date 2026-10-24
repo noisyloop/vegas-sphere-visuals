@@ -26,8 +26,9 @@ void main() {
   // zenith for the dome master so the fractal blooms straight overhead.
   vec3 axis = uMapping == 0 ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0);
   float s = dot(d, axis);
-  // Each hemisphere gets its own stereographic chart (from the opposite pole),
-  // so both sides show a full fractal and they meet where everything escapes.
+  // Each hemisphere gets its own stereographic chart (from the opposite pole).
+  // Both charts agree exactly on the seam (|p| = 1), so with the same c the
+  // fractal is continuous across it and can fill the whole sphere.
   vec3 t1 = normalize(abs(axis.y) > 0.5 ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0));
   vec3 t2 = cross(axis, t1);
   vec2 p = vec2(dot(d, t1), dot(d, t2)) / (1.0 + abs(s));
@@ -35,10 +36,10 @@ void main() {
   // Slow rotation + breathing zoom of the complex plane.
   float a = uTime * 0.07;
   p = mat2(cos(a), -sin(a), sin(a), cos(a)) * p;
-  vec2 z = p * (2.4 + 0.25 * sin(uTime * 0.21));
+  vec2 z = p * (1.55 + 0.12 * sin(uTime * 0.21));
 
   // c walks around a ring that hugs the Mandelbrot boundary: endless variety.
-  float ct = uTime * 0.11 + (s < 0.0 ? 2.1 : 0.0);
+  float ct = uTime * 0.11;
   vec2 c = 0.7885 * vec2(cos(ct), sin(ct));
 
   float trap = 1e9;
@@ -53,14 +54,15 @@ void main() {
 
   vec3 col;
   if (i >= MAX_IT) {
-    col = vec3(0.02, 0.0, 0.05) + 0.4 * palette(trap * 2.0 + uTime * 0.05) * exp(-trap * 6.0);
+    // Inside the set: colour by the orbit trap instead of leaving it black.
+    col = palette(trap * 3.0 + uTime * 0.05 + 0.5) * (0.2 + 0.6 * exp(-trap * 4.0));
   } else {
     float mu = i - log2(log2(dot(z, z))) + 4.0; // smooth iteration count
     // Log scale so the fast-escaping outer region still gets colour; the
     // dome is huge and mostly "outside" the set from most viewpoints.
     float f = log(mu + 1.0) / log(MAX_IT);
-    vec3 deep = vec3(0.05, 0.0, 0.12) * (0.6 + f);
-    col = mix(deep, palette(f * 1.6 + uTime * 0.03), smoothstep(0.25, 0.85, f));
+    vec3 deep = vec3(0.10, 0.02, 0.22) * (0.6 + f);
+    col = mix(deep, palette(f * 1.6 + uTime * 0.03), smoothstep(0.08, 0.6, f));
     col += 0.6 * vec3(1.0, 0.6, 1.0) * exp(-trap * 18.0);
   }
   // Shader works in display space; convert to linear for the render pipeline.

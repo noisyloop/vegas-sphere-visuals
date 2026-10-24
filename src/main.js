@@ -16,7 +16,10 @@ import { recordCanvas } from './recorder.js';
 import { bindPanel, toast } from './ui/panel.js';
 
 const SPHERE_RADIUS = 10;
-const SPHERE_CENTER = new THREE.Vector3(0, 9, 0); // sits slightly sunk into its base
+// The sphere sinks into a low podium so only ~70% of its height shows,
+// which makes it read wider than it is tall.
+const BASE_TOP = 2.5;
+const SPHERE_CENTER = new THREE.Vector3(0, BASE_TOP + SPHERE_RADIUS * 0.42, 0);
 const isMobile = window.matchMedia('(pointer: coarse)').matches;
 
 // --- Renderer, scene, camera -------------------------------------------------
@@ -42,6 +45,7 @@ const env = createEnvironment(scene, {
   sharedUniforms: sphere.sharedUniforms,
   sphereCenter: SPHERE_CENTER,
   sphereRadius: SPHERE_RADIUS,
+  baseTop: BASE_TOP,
 });
 
 // --- Post-processing: subtle bloom so bright LEDs glow -----------------------
@@ -55,7 +59,7 @@ composer.addPass(new OutputPass());
 const demo = new DemoFractal(renderer);
 const videoSrc = new VideoFileSource();
 const screenSrc = new ScreenCaptureSource();
-const cat = new CatMode(renderer, scene, { position: new THREE.Vector3(0, 4.5, SPHERE_RADIUS + 5) });
+const cat = new CatMode(renderer, scene, { position: new THREE.Vector3(0, BASE_TOP + 3.5, SPHERE_RADIUS + 7) });
 const audio = new AudioPlayer();
 
 const state = {
@@ -105,8 +109,9 @@ function setView(view) {
     controls.rotateSpeed = -0.35; // drag the content, like a 360 viewer
   } else {
     camera.fov = 50;
-    camera.position.set(0, 7, SPHERE_RADIUS * 4.2);
-    controls.target.y = SPHERE_CENTER.y - 1;
+    // Elevated, drone-style vantage point looking slightly down.
+    camera.position.set(0, SPHERE_RADIUS * 1.5, SPHERE_RADIUS * 3.4);
+    controls.target.y = SPHERE_CENTER.y - 1.5;
     controls.enableZoom = true;
     controls.enablePan = false;
     controls.minDistance = SPHERE_RADIUS * 1.5;
@@ -191,7 +196,7 @@ const app = {
       await cat.ready;
       ui.showCat(
         cat.source === 'procedural'
-          ? 'Built-in cartoon cat (add /assets/cat.glb or cat.png to swap)'
+          ? 'Built-in tabby (add /assets/cat.glb or cat.png to swap; green backgrounds are keyed out)'
           : `Using /assets/${cat.source}`
       );
     } else {

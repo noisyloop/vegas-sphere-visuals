@@ -78,7 +78,9 @@ void main() {
   float puck = mix(0.7, 1.0, 1.0 - clamp(dist / max(radius, 1e-3), 0.0, 1.0));
   // When dots shrink below ~2 px they would shimmer (moire). Fade towards the
   // dot's average coverage instead, which is what the eye sees from far away.
-  float coverage = PI * radius * radius * 0.85;
+  // (Boosted a little: from a distance the real thing reads as one bright,
+  // continuous screen, not as dots on black.)
+  float coverage = min(1.0, PI * radius * radius * 1.3);
   float farFade = smoothstep(0.25, 0.6, aa);
   float led = mix(dotMask * puck, coverage, farFade);
 
@@ -102,7 +104,7 @@ void main() {
   vec3 col3 = panel
             + content * led * uBrightness * viewDim
             // faint light bleed between dots = soft emissive glow
-            + content * 0.06 * uBrightness * viewDim;
+            + content * 0.1 * uBrightness * viewDim;
 
   gl_FragColor = vec4(col3, 1.0);
 }

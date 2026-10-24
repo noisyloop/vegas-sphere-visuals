@@ -35,13 +35,29 @@ async function loadGlb(url) {
   return normalise(gltf.scene);
 }
 
+// Card material that also keys out a green-screen background, so a cat image
+// shot on green works as well as one with real transparency.
+function chromaKeyMaterial(tex) {
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.05, side: THREE.DoubleSide });
+  mat.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      `#include <map_fragment>
+      float greenness = diffuseColor.g - max(diffuseColor.r, diffuseColor.b);
+      if (greenness > 0.18) discard;                       // key out the screen
+      diffuseColor.g = min(diffuseColor.g, max(diffuseColor.r, diffuseColor.b) + 0.02); // despill edges`
+    );
+  };
+  return mat;
+}
+
 async function loadPngCard(url) {
   const tex = await new THREE.TextureLoader().loadAsync(url);
   tex.colorSpace = THREE.SRGBColorSpace;
   const aspect = tex.image.width / tex.image.height;
   const card = new THREE.Mesh(
     new THREE.PlaneGeometry(2 * Math.min(aspect, 1.6), (2 * Math.min(aspect, 1.6)) / aspect),
-    new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.05, side: THREE.DoubleSide })
+    chromaKeyMaterial(tex)
   );
   const g = new THREE.Group();
   g.add(card);
@@ -56,17 +72,18 @@ function toonRamp() {
   return t;
 }
 
-// An original cartoon cat head: chunky round head, tabby forehead stripes,
-// big shiny eyes, a triangle nose and a little "w" mouth.
+// A chunky grey tabby built from primitives: round body with dark stripes,
+// white chest and paws, big head with amber eyes, and a curled tail.
 export function buildProceduralCat() {
   const ramp = toonRamp();
   const toon = (color) => new THREE.MeshToonMaterial({ color, gradientMap: ramp });
-  const fur = toon(0xf0a35c);     // warm ginger
-  const furDark = toon(0xb8622a); // stripes
-  const cream = toon(0xfff3e0);
-  const pink = toon(0xff8fab);
-  const black = new THREE.MeshBasicMaterial({ color: 0x111111 });
-  const white = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const fur = toon(0x7a7068);       // grey-brown tabby
+  const stripe = toon(0x3b3530);
+  const white = toon(0xeeeae4);
+  const pink = toon(0xd98a8f);
+  const iris = new THREE.MeshBasicMaterial({ color: 0x9a8a3a });
+  const black = new THREE.MeshBasicMaterial({ color: 0x0c0c0c });
+  const shine = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
   const cat = new THREE.Group();
   const add = (geo, mat, pos, scale = [1, 1, 1], rot = [0, 0, 0]) => {
@@ -79,50 +96,58 @@ export function buildProceduralCat() {
   };
   const sphere = (r) => new THREE.SphereGeometry(r, 32, 20);
 
+  // Body: a round loaf, with tabby stripes wrapped over the back.
+  const BX = 0.95, BY = 0.78, BZ = 1.3;
+  add(sphere(1), fur, [0, 0, 0], [BX, BY, BZ]);
+  for (const z of [-0.85, -0.45, -0.05, 0.35]) {
+    const k = Math.sqrt(1 - (z / BZ) ** 2) * 1.01;
+    add(new THREE.TorusGeometry(1, 0.06, 6, 32, Math.PI), stripe, [0, 0, z], [BX * k, BY * k, 1]);
+  }
+  add(sphere(1), white, [0, -0.12, 0.92], [0.55, 0.6, 0.42]); // chest
+
+  // Legs with white paws
+  for (const [x, z] of [[-0.5, 0.7], [0.5, 0.7], [-0.52, -0.75], [0.52, -0.75]]) {
+    add(new THREE.CylinderGeometry(0.2, 0.18, 0.6, 12), fur, [x, -0.72, z]);
+    add(sphere(0.21), white, [x, -1.02, z + 0.05], [1, 0.6, 1.25]);
+  }
+
+  // Tail curling up behind
+  const tail = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.1, -1.2), new THREE.Vector3(0.1, 0.3, -1.6),
+    new THREE.Vector3(0.35, 0.75, -1.65), new THREE.Vector3(0.45, 1.05, -1.4),
+  ]);
+  add(new THREE.TubeGeometry(tail, 24, 0.12, 8), fur, [0, 0, 0]);
+
   // Head
-  add(sphere(1), fur, [0, 0, 0], [1.18, 0.98, 1.0]);
-
-  // Ears: low-poly pyramids with pink insides
+  const H = [0, 0.62, 1.2];
+  const at = (x, y, z) => [H[0] + x, H[1] + y, H[2] + z];
+  add(sphere(0.66), fur, H, [1.12, 0.95, 0.95]);
+  for (const [x, rz] of [[-0.14, 0.2], [0, 0], [0.14, -0.2]]) {
+    add(new THREE.CapsuleGeometry(0.035, 0.18, 4, 8), stripe, at(x, 0.42, 0.42), [1, 1, 1], [-0.9, 0, rz]);
+  }
   for (const s of [-1, 1]) {
-    add(new THREE.ConeGeometry(0.4, 0.75, 4), fur, [s * 0.66, 0.85, 0.05], [1, 1, 0.6], [0, Math.PI / 4, s * -0.42]);
-    add(new THREE.ConeGeometry(0.24, 0.5, 4), pink, [s * 0.64, 0.8, 0.2], [1, 1, 0.35], [0, Math.PI / 4, s * -0.42]);
+    add(new THREE.ConeGeometry(0.24, 0.42, 4), fur, at(s * 0.42, 0.55, -0.05), [1, 1, 0.6], [0, Math.PI / 4, s * -0.35]);
+    add(new THREE.ConeGeometry(0.14, 0.28, 4), pink, at(s * 0.41, 0.52, 0.06), [1, 1, 0.35], [0, Math.PI / 4, s * -0.35]);
+    // Eyes: amber iris, round pupil, highlight
+    add(sphere(0.13), iris, at(s * 0.24, 0.1, 0.55), [1, 1, 0.5]);
+    add(sphere(0.085), black, at(s * 0.24, 0.1, 0.6), [1, 1, 0.5]);
+    add(sphere(0.03), shine, at(s * 0.24 + 0.04, 0.15, 0.64), [1, 1, 0.5]);
+    // Muzzle
+    add(sphere(0.2), white, at(s * 0.12, -0.2, 0.52), [1.05, 0.8, 0.7]);
   }
-
-  // Tabby stripes on the forehead
-  for (const [x, rz] of [[-0.22, 0.25], [0, 0], [0.22, -0.25]]) {
-    add(new THREE.CapsuleGeometry(0.045, 0.22, 4, 8), furDark, [x, 0.66, 0.72], [1, 1, 1], [-0.75, 0, rz]);
-  }
-
-  // Muzzle: two cheeks + chin
-  for (const s of [-1, 1]) add(sphere(0.34), cream, [s * 0.25, -0.32, 0.78], [1.05, 0.85, 0.7]);
-  add(sphere(0.25), cream, [0, -0.5, 0.75], [1, 0.7, 0.7]);
-
-  // Eyes: white, big pupil, two highlights each
-  for (const s of [-1, 1]) {
-    add(sphere(0.25), white, [s * 0.4, 0.15, 0.8], [1, 1.12, 0.55]);
-    add(sphere(0.17), black, [s * 0.4, 0.13, 0.9], [1, 1.15, 0.5]);
-    add(sphere(0.06), white, [s * 0.4 + 0.06, 0.22, 0.98], [1, 1, 0.5]);
-    add(sphere(0.03), white, [s * 0.4 - 0.05, 0.06, 0.98], [1, 1, 0.5]);
-  }
-
-  // Nose: a downward-pointing triangle
-  add(new THREE.ConeGeometry(0.09, 0.09, 3), pink, [0, -0.16, 1.03], [1.3, 1, 0.6], [Math.PI, 0, 0]);
-
-  // "w" mouth from two half-tori
-  for (const s of [-1, 1]) {
-    add(new THREE.TorusGeometry(0.085, 0.018, 6, 16, Math.PI), black, [s * 0.085, -0.28, 1.0], [1, 1, 1], [0, 0, Math.PI]);
-  }
-
-  // Whiskers
-  const wGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.85, 4);
+  add(sphere(0.15), white, at(0, -0.33, 0.48), [1, 0.7, 0.7]); // chin
+  add(new THREE.ConeGeometry(0.06, 0.06, 3), pink, at(0, -0.06, 0.66), [1.3, 1, 0.6], [Math.PI, 0, 0]);
+  const wGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.6, 4);
   for (const s of [-1, 1]) {
     for (const k of [-1, 0, 1]) {
-      add(wGeo, black, [s * 0.78, -0.3 + k * 0.08, 0.72], [1, 1, 1], [0, s * 0.25, Math.PI / 2 + k * 0.12 * s]);
+      add(wGeo, shine, at(s * 0.45, -0.2 + k * 0.05, 0.48), [1, 1, 1], [0, s * 0.3, Math.PI / 2 + k * 0.12 * s]);
     }
   }
 
-  cat.userData.procedural = true;
-  return cat;
+  // Centre it and scale to ~2 units across so it fits like the old head did.
+  const wrapped = normalise(cat, 2.6);
+  wrapped.userData.procedural = true;
+  return wrapped;
 }
 
 export async function loadCatModel() {

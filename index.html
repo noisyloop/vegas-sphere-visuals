@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#05040a" />
+    <meta name="description" content="Preview your visuals on a stylized giant LED sphere at night." />
+    <title>LED Dome Preview</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%23ff3fa4'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+
+    <div id="drop-hint" hidden>Drop a video to play it on the dome</div>
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <aside id="panel" class="panel">
+      <header class="panel-head">
+        <h1>LED Dome Preview</h1>
+        <button id="collapse" class="icon-btn" aria-expanded="true" aria-controls="panel-body" title="Hide controls">–</button>
+      </header>
+
+      <div id="panel-body" class="panel-body">
+        <section>
+          <h2>Content</h2>
+          <div class="seg" role="radiogroup" aria-label="Content source">
+            <button data-source="demo" class="active">Demo</button>
+            <button data-source="video">Video</button>
+            <button data-source="screen">Screen</button>
+          </div>
+          <div class="row">
+            <label class="file-btn">
+              <input id="video-file" type="file" accept="video/*" />
+              Choose video…
+            </label>
+            <button id="capture-btn">Capture tab</button>
+          </div>
+          <p id="source-status" class="status">Built-in Julia fractal</p>
+        </section>
+
+        <section>
+          <h2>View</h2>
+          <div class="seg" role="radiogroup" aria-label="View mode">
+            <button data-view="exterior" class="active">Exterior</button>
+            <button data-view="interior">Interior</button>
+          </div>
+          <div class="seg" role="radiogroup" aria-label="Texture mapping">
+            <button data-mapping="0" class="active">Equirect</button>
+            <button data-mapping="1">Dome master</button>
+          </div>
+          <label class="check"><input id="auto-orbit" type="checkbox" checked /> Auto-orbit</label>
+        </section>
+
+        <section>
+          <h2>LEDs</h2>
+          <label class="slider">Brightness <output for="brightness"></output>
+            <input id="brightness" type="range" min="0" max="3" step="0.05" value="1.2" /></label>
+          <label class="slider">Dot size <output for="dot-size"></output>
+            <input id="dot-size" type="range" min="0.2" max="1" step="0.01" value="0.75" /></label>
+          <label class="slider">Density <output for="density"></output>
+            <input id="density" type="range" min="40" max="400" step="2" value="160" /></label>
+          <label class="slider">Bloom <output for="bloom"></output>
+            <input id="bloom" type="range" min="0" max="3" step="0.05" value="0.8" /></label>
+          <label class="slider">Rotation <output for="rotation"></output>
+            <input id="rotation" type="range" min="-0.5" max="0.5" step="0.01" value="0.05" /></label>
+        </section>
+
+        <section>
+          <h2>Cat mode</h2>
+          <label class="check"><input id="cat-mode" type="checkbox" /> Spinning cat</label>
+          <label class="check"><input id="green-screen" type="checkbox" /> Green screen</label>
+          <label class="slider">Spin <output for="cat-spin"></output>
+            <input id="cat-spin" type="range" min="0" max="12" step="0.1" value="4" /></label>
+          <div class="row">
+            <label class="file-btn">
+              <input id="audio-file" type="file" accept="audio/*" />
+              Your audio…
+            </label>
+            <button id="audio-toggle" disabled>Play</button>
+          </div>
+          <p id="cat-status" class="status"></p>
+        </section>
+
+        <section>
+          <button id="record-btn" class="record">● Record 15s</button>
+        </section>
+      </div>
+    </aside>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
